@@ -1,12 +1,13 @@
 {
   "name": "sean-promise",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "write a custom promise to better understand it",
   "main": "./dist/index.js",
   "types": "./dist/types/index.d.ts",
   "files": [
     "dist"
   ],
+  "private": false,
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "npx webpack"
