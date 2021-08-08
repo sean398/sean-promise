@@ -10,7 +10,8 @@
   "private": false,
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "npx webpack"
+    "build": "npx webpack",
+    "validate": "npm run build && promises-aplus-tests dist"
   },
   "repository": {
     "type": "git",
@@ -28,6 +29,7 @@
   "devDependencies": {
     "clean-webpack-plugin": "^4.0.0-alpha.0",
     "prettier": "^2.3.2",
+    "promises-aplus-tests": "^2.1.2",
     "ts-loader": "^9.2.5",
     "tslint": "^6.1.3",
     "tslint-loader": "^3.5.4",

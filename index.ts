@@ -19,7 +19,7 @@ interface IExecutorFn {
 
 export const isFunction = (fn: any): boolean => typeof fn === "function";
 export const isObject = (obj: any): boolean => typeof obj === "object";
-export default class SeanPromist {
+class SeanPromise {
   protected PromiseState: PromiseStates;
   protected PromiseResult: any;
   protected resolveCallbackQueues: IFunction[];
@@ -33,8 +33,16 @@ export default class SeanPromist {
     executor(this._resolve, this._reject);
   }
 
-  _putInEventLoop = (fuc: IFunction) => {
-    setTimeout(fuc, 0);
+  static is(promise: SeanPromise) {
+    return promise instanceof SeanPromise;
+  }
+
+  /**
+   * put this function in micro tasks
+   * @param fuc
+   */
+  _putInMicrotasks = (fuc: IFunction) => {
+    queueMicrotask(fuc);
   };
 
   /**
@@ -44,7 +52,7 @@ export default class SeanPromist {
    * @returns
    */
   _resolve = (value?: any) => {
-    this._putInEventLoop(() => {
+    this._putInMicrotasks(() => {
       if (this.PromiseState !== PROMISE_STATES.PENDING) return;
       while (this.resolveCallbackQueues.length > 0) {
         const fn = this.resolveCallbackQueues.shift();
@@ -59,10 +67,10 @@ export default class SeanPromist {
    * change state to rejected
    * excute rejectCallbackQueues and clean it
    * @param reject_reason
-   * @returns
+   * @returns000
    */
   _reject = (reason?: any) => {
-    this._putInEventLoop(() => {
+    this._putInMicrotasks(() => {
       if (this.PromiseState !== PROMISE_STATES.PENDING) return;
       while (this.rejectCallbackQueues.length > 0) {
         const fn = this.rejectCallbackQueues.shift();
@@ -73,19 +81,108 @@ export default class SeanPromist {
     });
   };
 
-  then = (onFullied?: IFunction, onRejected?: IFunction) => {
-    switch (this.PromiseState) {
-      case PROMISE_STATES.PENDING:
-        isFunction(onFullied) && this.resolveCallbackQueues.push(onFullied);
-        isFunction(onRejected) && this.rejectCallbackQueues.push(onRejected);
-        break;
-      case PROMISE_STATES.FULFILLED:
-        isFunction(onFullied) && onFullied(this.PromiseResult);
-        break;
-      case PROMISE_STATES.REJECTED:
-        isFunction(onRejected) && onRejected(this.PromiseResult);
-        break;
-    }
-    return this;
+  then = (onFulfilled?: IFunction, onRejected?: IFunction) => {
+    onFulfilled = isFunction(onFulfilled) ? onFulfilled : (value) => value;
+    onRejected = isFunction(onRejected)
+      ? onRejected
+      : (err) => {
+          throw err;
+        };
+
+    return new SeanPromise((resolve, reject) => {
+      const handleFulfilled = (val: any) => {
+        try {
+          const res = onFulfilled(val);
+          if (SeanPromise.is(res)) {
+            res.then(resolve, reject);
+          } else {
+            resolve(res);
+          }
+        } catch (error) {
+          // reject if error happen
+          reject(error);
+        }
+      };
+
+      const handleRejected = (val: any) => {
+        try {
+          const res = onRejected(val);
+          reject(res);
+        } catch (error) {
+          reject(error);
+        }
+      };
+
+      switch (this.PromiseState) {
+        case PROMISE_STATES.PENDING:
+          this.resolveCallbackQueues.push(handleFulfilled);
+          this.rejectCallbackQueues.push(handleRejected);
+          break;
+        case PROMISE_STATES.FULFILLED:
+          handleFulfilled(this.PromiseResult);
+          break;
+        case PROMISE_STATES.REJECTED:
+          handleRejected(this.PromiseResult);
+          break;
+      }
+    });
   };
+
+  catch = (rejectCallback: IFunction | null) => {
+    return this.then(null, rejectCallback);
+  };
+
+  static resolve(value?: any) {
+    if (SeanPromise.is(value)) {
+      return value;
+    }
+    return new SeanPromise((resolve) => resolve(value));
+  }
+
+  finally = (fianlCallback: IFunction | null) => {
+    return this.then(
+      (val) =>
+        SeanPromise.resolve(fianlCallback && fianlCallback()).then(() => val),
+      (err) =>
+        SeanPromise.resolve(fianlCallback && fianlCallback()).then(() => {
+          throw err;
+        })
+    );
+  };
+
+  /**
+   * @all get a promise queues
+   */
+  static all = (promises: Array<IFunction>) => {
+    return new SeanPromise((resolve, reject) => {
+      let resolvedPromisesResult = <any>[];
+      promises.forEach((promise, index) => {
+        SeanPromise.resolve(promise)
+          .then((res: any) => {
+            resolvedPromisesResult.push(res);
+            if (index === promises.length - 1) {
+              resolve(resolvedPromisesResult);
+            }
+          })
+          .catch((err: any) => {
+            reject(err);
+          });
+      });
+    });
+  };
+
+  /**
+   * use  promises-aplus-tests to validate our promise
+   * @validation
+   */
+  static deferred() {
+    let defer: any = {};
+    defer.promise = new SeanPromise((resolve, reject) => {
+      defer.resolve = resolve;
+      defer.reject = reject;
+    });
+    return defer;
+  }
 }
+
+module.exports = SeanPromise;
