@@ -11,7 +11,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "npx webpack",
-    "validate": "npm run build && promises-aplus-tests dist"
+    "validate": "npm run build && promises-aplus-tests ./dist/index.js"
   },
   "repository": {
     "type": "git",
@@ -27,6 +27,9 @@
   },
   "homepage": "https://github.com/sean398/sean-promise#readme",
   "devDependencies": {
+    "@babel/core": "^7.15.0",
+    "@babel/preset-env": "^7.15.0",
+    "babel-loader": "^8.2.2",
     "clean-webpack-plugin": "^4.0.0-alpha.0",
     "prettier": "^2.3.2",
     "promises-aplus-tests": "^2.1.2",

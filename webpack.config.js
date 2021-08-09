@@ -21,29 +21,16 @@ module.exports = {
     index: "./index.ts",
   },
   output: {
-    filename: "[name].js", // 生成的fiename需要与package.json中的main一致
+    filename: "[name].js",
     path: path.resolve(__dirname, "dist"),
     libraryTarget: "commonjs",
   },
   module: {
     rules: [
       {
-        test: /\.ts?$/,
-        use: [
-          {
-            loader: "tslint-loader",
-          },
-        ],
+        test: /\.ts$/,
         exclude: /node_modules/,
-      },
-      {
-        test: /\.ts?$/,
-        use: [
-          {
-            loader: "ts-loader",
-          },
-        ],
-        exclude: /node_modules/,
+        use: ["babel-loader", "ts-loader"],
       },
     ],
   },

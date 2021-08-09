@@ -170,19 +170,20 @@ class SeanPromise {
       });
     });
   };
-
-  /**
-   * use  promises-aplus-tests to validate our promise
-   * @validation
-   */
-  static deferred() {
-    let defer: any = {};
-    defer.promise = new SeanPromise((resolve, reject) => {
-      defer.resolve = resolve;
-      defer.reject = reject;
-    });
-    return defer;
-  }
 }
+
+/**
+ * use  promises-aplus-tests to validate our promise
+ * @validation
+ */
+(SeanPromise as any).deferred = function () {
+  var result: any = {};
+  result.promise = new SeanPromise(function (resolve, reject) {
+    result.resolve = resolve;
+    result.reject = reject;
+  });
+
+  return result;
+};
 
 module.exports = SeanPromise;
